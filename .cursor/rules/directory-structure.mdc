@@ -1,0 +1,30 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Directory Structure
+
+## Main Directories
+- **constant/**: Contains application constants and enums
+- **grafana/**: Grafana configuration files
+- **handler/**: HTTP handlers and API endpoints
+- **logger/**: Custom logging utilities
+- **migrations/**: Database migration scripts
+- **storage/**: Database access and data persistence
+- **tractx/**: Tracing utilities and context management
+- **usecase/**: Business logic and core application functionality
+
+## Root Files
+- **main.go**: Application entry point
+- **otel.go**: OpenTelemetry SDK setup
+- **logger.go**: Logging configuration
+- **compose.yaml**: Docker Compose configuration
+- **otel-collector-config.yaml**: OpenTelemetry Collector configuration
+- **go.mod/go.sum**: Go module dependencies
+
+## Architecture Layers
+The project follows a clean architecture pattern:
+- [handler/](mdc:handler/): Presentation layer
+- [usecase/](mdc:usecase/): Application/business layer
+- [storage/](mdc:storage/): Data access layer

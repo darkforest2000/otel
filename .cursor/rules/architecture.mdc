@@ -1,0 +1,25 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Architecture
+
+This project follows a clean architecture pattern with clear separation of concerns:
+
+## Application Flow
+1. HTTP requests are handled by [handler/handler.go](mdc:handler/handler.go)
+2. Handlers call business logic in [usecase/usecase.go](mdc:usecase/usecase.go)
+3. Use cases interact with the database through [storage/storage.go](mdc:storage/storage.go)
+
+## Telemetry Flow
+1. OpenTelemetry SDK is set up in [otel.go](mdc:otel.go)
+2. Telemetry data (traces, metrics, logs) is sent to the OpenTelemetry Collector
+3. The collector processes and forwards data to backends (Jaeger, etc.)
+4. Visualization is available through Jaeger UI and Grafana
+
+## Components
+- **Handler Layer**: Responsible for HTTP routing, request parsing, and response formatting
+- **Use Case Layer**: Contains business logic and orchestrates operations
+- **Storage Layer**: Handles database interactions and data persistence
+- **Logger**: Provides structured logging capabilities

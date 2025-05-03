@@ -9,18 +9,89 @@ services:
       - "4317:4317" # OTLP gRPC receiver
     depends_on:
       - jaeger
+      - clickhouse
+      - cassandra
+    restart: on-failure
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
 
   jaeger:
     image: jaegertracing/all-in-one:1.52.0
     container_name: jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true  # Включаем OTLP приемник
+      - SPAN_STORAGE_TYPE=cassandra # Use Cassandra storage
+      - CASSANDRA_SERVERS=cassandra # Cassandra service name
+      - CASSANDRA_KEYSPACE=jaeger_v1_dc1 # Default keyspace used by schema job
+      # Optional Cassandra auth:
+      # - CASSANDRA_USERNAME=user
+      # - CASSANDRA_PASSWORD=pass
     ports:
       - "6831:6831/udp" # Jaeger agent (для приема Thrift compact)
       - "16686:16686" # Jaeger UI
       - "14268:14268" # Jaeger collector (для приема Thrift HTTP)
       - "14250:14250" # Jaeger collector (для приема gRPC)
-  
+    depends_on:
+      - cassandra
+      - jaeger-schema
+    restart: on-failure # Restart if it fails (e.g., if Cassandra is slow to start)
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: clickhouse
+    ports:
+      - "8123:8123" # HTTP interface
+      - "9000:9000" # Native interface
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - ./clickhouse-init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./clickhouse-users.xml:/etc/clickhouse-server/users.d/users.xml
+    environment:
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_DB=otel_logs
+      - CLICKHOUSE_LOG_LEVEL=trace
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  cassandra:
+    image: cassandra:4.1 # Use an appropriate Cassandra version
+    container_name: cassandra
+    ports:
+      - "9042:9042" # Native protocol port
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=jaeger_cluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_DC=dc1
+      # Adjust memory limits if needed
+      - MAX_HEAP_SIZE=1G
+      - HEAP_NEWSIZE=256M
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "describe keyspaces"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  jaeger-schema:
+    image: jaegertracing/jaeger-cassandra-schema:1.52.0 # Image specifically for schema init
+    container_name: jaeger_schema_init
+    environment:
+      - CASSANDRA_CONTACT_POINTS=cassandra # Connect to Cassandra service
+      - KEYSPACE=jaeger_v1_dc1 # Must match Jaeger's keyspace config
+      # Optional auth:
+      # - CASSANDRA_USERNAME=user
+      # - CASSANDRA_PASSWORD=pass
+      # - MODE=test # Use 'prod' for production, 'test' creates smaller keyspace for testing
+    depends_on:
+      cassandra: # Wait for Cassandra to be healthy
+        condition: service_healthy
+    # No restart needed, it's a one-off job
+
   postgres:
     image: postgres:16
     container_name: postgres
@@ -30,7 +101,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-  
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -38,10 +109,14 @@ services:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
     volumes:
       - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
-
+      - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/dashboards
 
 volumes:
   grafana-data:
   postgres-data:
+  clickhouse-data:
+  cassandra-data: # Volume for Cassandra data

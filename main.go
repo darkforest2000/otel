@@ -2,31 +2,15 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"sync"
 	"wapp/handler"
 	"wapp/storage"
 	"wapp/usecase"
 )
-
-// Global database connection pool
-var globalDB *sql.DB
-
-// Simple in-memory store for the /data endpoint
-var dataStore = struct {
-	sync.RWMutex
-	data map[string]interface{}
-}{data: make(map[string]interface{})}
-
-// Counter for the /counter endpoint, using atomic for safe concurrent access
-var requestCounter int64
-
-var notFound = fmt.Errorf("not found")
 
 // --- Main ---
 

@@ -10,7 +10,7 @@ datasources:
     editable: true
     jsonData:
       tracesToLogsV2:
-        datasourceUid: 'loki'
+        datasourceUid: 'clickhouse'
         spanStartTimeShift: '1h'
         spanEndTimeShift: '-1h'
         tags: ['job', 'instance', 'pod', 'namespace']
@@ -18,3 +18,17 @@ datasources:
         filterBySpanID: false
       nodeGraph:
         enabled: true
+        
+  - name: ClickHouse
+    type: grafana-clickhouse-datasource
+    uid: clickhouse
+    url: http://clickhouse:8123
+    access: proxy
+    isDefault: false
+    editable: true
+    jsonData:
+      defaultDatabase: otel_logs
+      defaultTable: logs
+      username: default
+    secureJsonData:
+      password: ""

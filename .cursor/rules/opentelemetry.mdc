@@ -1,0 +1,35 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# OpenTelemetry Integration
+
+This project demonstrates a complete OpenTelemetry setup for observability with three pillars:
+
+## Setup
+The OpenTelemetry SDK is initialized in [otel.go](mdc:otel.go), which sets up:
+- Trace Provider
+- Meter Provider
+- Logger Provider
+- Context Propagation
+
+## Collector Configuration
+[otel-collector-config.yaml](mdc:otel-collector-config.yaml) defines:
+- OTLP receivers (HTTP/gRPC)
+- Exporters (debug, Jaeger)
+- Processing pipelines for logs, metrics, and traces
+
+## Infrastructure
+The observability stack in [compose.yaml](mdc:compose.yaml) includes:
+- OpenTelemetry Collector
+- Jaeger (distributed tracing)
+- Grafana (dashboards and visualization)
+- PostgreSQL (application database)
+
+## Best Practices
+This implementation demonstrates key observability practices:
+- Context propagation across service boundaries
+- Resource attributes for service identification
+- Batch processing of telemetry data
+- Proper shutdown handling of telemetry providers

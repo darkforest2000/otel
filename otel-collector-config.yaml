@@ -13,6 +13,18 @@ exporters:
     endpoint: "jaeger:4317"
     tls: # Добавляем конфигурацию TLS
       insecure: true # Отключаем TLS, используем незашифрованное соединение
+  clickhouse:
+    endpoint: http://clickhouse:8123
+    database: otel_logs 
+    logs_table_name: logs
+    username: default
+    password: ""
+    timeout: 5s
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
 
 processors:
   batch:
@@ -27,7 +39,7 @@ service:
     logs:
       receivers: [otlp]
       processors: [batch, resource]
-      exporters: [debug]
+      exporters: [debug, clickhouse]
     metrics:
       receivers: [otlp]
       processors: [batch, resource]

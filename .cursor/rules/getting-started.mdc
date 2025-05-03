@@ -1,0 +1,40 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Getting Started
+
+## Project Setup
+1. Start the infrastructure services:
+   ```
+   docker-compose up -d
+   ```
+
+2. Run the application:
+   ```
+   go run .
+   ```
+
+## Key URLs
+- **Application**: http://localhost:8080
+- **Jaeger UI**: http://localhost:16686
+- **Grafana**: http://localhost:3000 (admin/admin)
+
+## Key Files
+- [main.go](mdc:main.go): Application entry point
+- [compose.yaml](mdc:compose.yaml): Infrastructure configuration
+- [otel-collector-config.yaml](mdc:otel-collector-config.yaml): Telemetry collection setup
+
+## Development Workflow
+1. Modify code in the relevant layer:
+   - API endpoints in [handler/](mdc:handler/)
+   - Business logic in [usecase/](mdc:usecase/)
+   - Data access in [storage/](mdc:storage/)
+
+2. Ensure telemetry is properly instrumented:
+   - Traces for request flows
+   - Metrics for important indicators
+   - Logs for debugging information
+
+3. Check telemetry in Jaeger and Grafana dashboards

@@ -1,0 +1,21 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Project Overview
+
+This project is a Go application demonstrating the use of OpenTelemetry for observability. It follows a clean architecture pattern with the following main components:
+
+- **Entry Point**: [main.go](mdc:main.go) - Initializes and connects all components
+- **Observability**: [otel.go](mdc:otel.go) - Sets up OpenTelemetry tracing, metrics, and logging
+- **HTTP Layer**: [handler/handler.go](mdc:handler/handler.go) - API endpoints and HTTP server
+- **Business Logic**: [usecase/usecase.go](mdc:usecase/usecase.go) - Core application logic
+- **Data Access**: [storage/storage.go](mdc:storage/storage.go) - Database interactions
+- **Logging**: [logger.go](mdc:logger.go) - Custom logging functionality
+
+## Infrastructure
+- **Docker Compose**: [compose.yaml](mdc:compose.yaml) - Defines service containers
+- **OpenTelemetry Collector**: [otel-collector-config.yaml](mdc:otel-collector-config.yaml) - Configures telemetry collection
+
+This application demonstrates sending telemetry data to OpenTelemetry Collector which forwards it to tools like Jaeger for tracing, and includes Grafana for visualization.
