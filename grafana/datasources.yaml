@@ -22,13 +22,14 @@ datasources:
   - name: ClickHouse
     type: grafana-clickhouse-datasource
     uid: clickhouse
-    url: http://clickhouse:8123
     access: proxy
     isDefault: false
     editable: true
     jsonData:
       defaultDatabase: otel_logs
       defaultTable: logs
+      host: clickhouse
+      port: 9000
       username: default
     secureJsonData:
       password: ""

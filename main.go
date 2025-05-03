@@ -40,6 +40,7 @@ func main() {
 		errRecord := log.Record{}
 		errRecord.SetTimestamp(time.Now())
 		errRecord.SetSeverity(log.SeverityError)
+		errRecord.SetSeverityText("ERROR")
 		errRecord.SetBody(log.StringValue(fmt.Sprintf("Failed to connect to database: %v", err)))
 		logger.Emit(context.Background(), errRecord)
 
@@ -56,6 +57,7 @@ func main() {
 		startRecord := log.Record{}
 		startRecord.SetTimestamp(time.Now())
 		startRecord.SetSeverity(log.SeverityInfo)
+		startRecord.SetSeverityText("INFO")
 		startRecord.SetBody(log.StringValue("Приложение запущено на порту 8080"))
 		logger.Emit(context.Background(), startRecord)
 
@@ -69,6 +71,7 @@ func main() {
 		errRecord := log.Record{}
 		errRecord.SetTimestamp(time.Now())
 		errRecord.SetSeverity(log.SeverityError)
+		errRecord.SetSeverityText("ERROR")
 		errRecord.SetBody(log.StringValue(fmt.Sprintf("Error starting server: %v", err)))
 		logger.Emit(context.Background(), errRecord)
 
@@ -78,6 +81,7 @@ func main() {
 		interruptRecord := log.Record{}
 		interruptRecord.SetTimestamp(time.Now())
 		interruptRecord.SetSeverity(log.SeverityInfo)
+		interruptRecord.SetSeverityText("INFO")
 		interruptRecord.SetBody(log.StringValue("Received interrupt signal, shutting down..."))
 		logger.Emit(context.Background(), interruptRecord)
 
@@ -90,9 +94,11 @@ func main() {
 	shutdownRecord := log.Record{}
 	shutdownRecord.SetTimestamp(time.Now())
 	shutdownRecord.SetSeverity(log.SeverityInfo)
+	shutdownRecord.SetSeverityText("INFO")
 	shutdownRecord.SetBody(log.StringValue("Server shutdown completed"))
 	if err != nil && !errors.Is(err, context.Canceled) {
 		shutdownRecord.SetSeverity(log.SeverityError)
+		shutdownRecord.SetSeverityText("ERROR")
 		shutdownRecord.SetBody(log.StringValue(fmt.Sprintf("Server shutdown error: %v", err)))
 	}
 	logger.Emit(context.Background(), shutdownRecord)
