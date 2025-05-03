@@ -1,0 +1,80 @@
+package main
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"wapp/handler"
+	"wapp/storage"
+	"wapp/usecase"
+)
+
+// Global database connection pool
+var globalDB *sql.DB
+
+// Simple in-memory store for the /data endpoint
+var dataStore = struct {
+	sync.RWMutex
+	data map[string]interface{}
+}{data: make(map[string]interface{})}
+
+// Counter for the /counter endpoint, using atomic for safe concurrent access
+var requestCounter int64
+
+var notFound = fmt.Errorf("not found")
+
+// --- Main ---
+
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
+	// Set up OpenTelemetry.
+	otelShutdown, err := setupOTelSDK(ctx)
+	if err != nil {
+		log.Fatalf("Failed to set up OpenTelemetry: %v", err)
+		return
+	}
+	// Handle shutdown properly so nothing leaks.
+	defer func() {
+		err = errors.Join(err, otelShutdown(context.Background()))
+	}()
+
+	storage, err := storage.NewStorage(ctx)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to connect to database: %v", err))
+	}
+	defer storage.Close()
+
+	usecase := usecase.New(storage)
+	handler := handler.New(usecase)
+	srv := handler.NewServer(ctx)
+
+	srvErr := make(chan error, 1)
+	go func() {
+		log.Printf("Starting server on :8080")
+		srvErr <- srv.ListenAndServe()
+	}()
+
+	// Wait for interruption.
+	select {
+	case err = <-srvErr:
+		// Error when starting HTTP server.
+		log.Printf("Error starting server: %v", err)
+		return
+	case <-ctx.Done():
+		// Wait for first CTRL+C.
+		log.Println("Received interrupt signal, shutting down...")
+		// Stop receiving signal notifications as soon as possible.
+		stop()
+	}
+
+	// When Shutdown is called, ListenAndServe immediately returns ErrServerClosed.
+	err = srv.Shutdown(context.Background())
+	return
+}

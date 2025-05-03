@@ -1,0 +1,38 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: "0.0.0.0:4318"
+      grpc:
+        endpoint: "0.0.0.0:4317"
+
+exporters:
+  debug: # this will export data to the console
+    verbosity: detailed # without this we won't be able to see the log
+  otlp: # Используем тип экспортера 'otlp'
+    endpoint: "jaeger:4317"
+    tls: # Добавляем конфигурацию TLS
+      insecure: true # Отключаем TLS, используем незашифрованное соединение
+
+processors:
+  batch:
+  resource:
+    attributes:
+      - key: service.name
+        value: "go-app"
+        action: upsert
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [debug]
+    traces:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [debug, otlp]

@@ -1,0 +1,20 @@
+apiVersion: 1
+
+datasources:
+  - name: Jaeger
+    type: jaeger
+    uid: jaeger
+    url: http://jaeger:16686
+    access: proxy
+    isDefault: true
+    editable: true
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: 'loki'
+        spanStartTimeShift: '1h'
+        spanEndTimeShift: '-1h'
+        tags: ['job', 'instance', 'pod', 'namespace']
+        filterByTraceID: true
+        filterBySpanID: false
+      nodeGraph:
+        enabled: true
