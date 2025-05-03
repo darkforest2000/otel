@@ -15,7 +15,7 @@ type Storage struct {
 	db *sql.DB
 }
 
-func NewStorage(ctx context.Context) (*Storage, error) {
+func New(ctx context.Context) (*Storage, error) {
 	db, err := setupDBWithTracing(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to setup database: %w", err)
