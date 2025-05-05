@@ -36,7 +36,7 @@ func (u *Usecase) Hello(ctx tractx.Context, name string) (string, error) {
 
 	name, err := u.storage.GetSurname(ctx, name)
 	if err != nil {
-		lg(ctx).Error("want500", logger.Err(err))
+		lg(ctx).Error("storage error", logger.Err(err))
 		return "", err
 	}
 	return name, nil
