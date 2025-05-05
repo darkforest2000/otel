@@ -8,8 +8,10 @@ services:
       - "4318:4318" # OTLP HTTP receiver
       - "4317:4317" # OTLP gRPC receiver
     depends_on:
-      - jaeger
-      - clickhouse
+      jaeger:
+        condition: service_started # Jaeger can start whenever
+      clickhouse:
+        condition: service_healthy # Wait for ClickHouse healthcheck
     restart: on-failure
     command: ["--config=/etc/otelcol-contrib/config.yaml"]
 
@@ -24,7 +26,11 @@ services:
       - "14268:14268" # Jaeger collector (для приема Thrift HTTP)
       - "14250:14250" # Jaeger collector (для приема gRPC)
     depends_on:
-      - clickhouse
+      clickhouse:
+         condition: service_healthy # Jaeger might also need ClickHouse ready for UI/API features
+      # If you switched Jaeger to Cassandra, add that dependency here too:
+      # cassandra:
+      #   condition: service_healthy
     restart: on-failure # Restart if it fails
 
   clickhouse:
@@ -47,6 +53,12 @@ services:
       nofile:
         soft: 262144
         hard: 262144
+    healthcheck: # Added healthcheck
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s # Give ClickHouse time to start before checking
 
   postgres:
     image: postgres:16
