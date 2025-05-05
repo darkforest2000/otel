@@ -6,13 +6,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"time"
 	"wapp/handler"
+	"wapp/logger"
 	"wapp/storage"
 	"wapp/usecase"
-
-	"go.opentelemetry.io/otel/log"
-	"go.opentelemetry.io/otel/log/global"
 )
 
 // --- Main ---
@@ -24,7 +21,8 @@ func main() {
 	// Set up OpenTelemetry.
 	otelShutdown, err := setupOTelSDK(ctx)
 	if err != nil {
-		fmt.Printf("Failed to set up OpenTelemetry: %v\n", err)
+		// Logging might not be available yet, print to stderr
+		fmt.Fprintf(os.Stderr, "Failed to set up OpenTelemetry: %v\n", err)
 		return
 	}
 	// Handle shutdown properly so nothing leaks.
@@ -32,18 +30,12 @@ func main() {
 		err = errors.Join(err, otelShutdown(context.Background()))
 	}()
 
-	logger := global.GetLoggerProvider().Logger("main")
+	lg := logger.NewTraceLogger(ctx, "main")
 
 	storage, err := storage.New(ctx)
 	if err != nil {
-		// Log error before panic
-		errRecord := log.Record{}
-		errRecord.SetTimestamp(time.Now())
-		errRecord.SetSeverity(log.SeverityError)
-		errRecord.SetSeverityText("ERROR")
-		errRecord.SetBody(log.StringValue(fmt.Sprintf("Failed to connect to database: %v", err)))
-		logger.Emit(context.Background(), errRecord)
-
+		// Use helper for logging
+		lg.Fatal("Failed to connect to database", logger.Err(err))
 		panic(fmt.Sprintf("Failed to connect to database: %v", err))
 	}
 	defer storage.Close()
@@ -54,13 +46,8 @@ func main() {
 
 	srvErr := make(chan error, 1)
 	go func() {
-		startRecord := log.Record{}
-		startRecord.SetTimestamp(time.Now())
-		startRecord.SetSeverity(log.SeverityInfo)
-		startRecord.SetSeverityText("INFO")
-		startRecord.SetBody(log.StringValue("Приложение запущено на порту 8080"))
-		logger.Emit(context.Background(), startRecord)
-
+		// Use helper for logging
+		lg.Info("Приложение запущено на порту 8080")
 		srvErr <- srv.ListenAndServe()
 	}()
 
@@ -68,40 +55,23 @@ func main() {
 	select {
 	case err = <-srvErr:
 		// Error when starting HTTP server.
-		errRecord := log.Record{}
-		errRecord.SetTimestamp(time.Now())
-		errRecord.SetSeverity(log.SeverityError)
-		errRecord.SetSeverityText("ERROR")
-		errRecord.SetBody(log.StringValue(fmt.Sprintf("Error starting server: %v", err)))
-		logger.Emit(context.Background(), errRecord)
-
+		lg.Error("Error starting server", logger.Err(err))
 		return
 	case <-ctx.Done():
 		// Wait for first CTRL+C.
-		interruptRecord := log.Record{}
-		interruptRecord.SetTimestamp(time.Now())
-		interruptRecord.SetSeverity(log.SeverityInfo)
-		interruptRecord.SetSeverityText("INFO")
-		interruptRecord.SetBody(log.StringValue("Received interrupt signal, shutting down..."))
-		logger.Emit(context.Background(), interruptRecord)
-
+		lg.Info("Received interrupt signal, shutting down...")
 		// Stop receiving signal notifications as soon as possible.
 		stop()
 	}
 
 	// When Shutdown is called, ListenAndServe immediately returns ErrServerClosed.
-	err = srv.Shutdown(context.Background())
-	shutdownRecord := log.Record{}
-	shutdownRecord.SetTimestamp(time.Now())
-	shutdownRecord.SetSeverity(log.SeverityInfo)
-	shutdownRecord.SetSeverityText("INFO")
-	shutdownRecord.SetBody(log.StringValue("Server shutdown completed"))
+	shutdownCtx := context.Background() // Use a background context for shutdown
+	err = srv.Shutdown(shutdownCtx)
 	if err != nil && !errors.Is(err, context.Canceled) {
-		shutdownRecord.SetSeverity(log.SeverityError)
-		shutdownRecord.SetSeverityText("ERROR")
-		shutdownRecord.SetBody(log.StringValue(fmt.Sprintf("Server shutdown error: %v", err)))
+		lg.Error("Server shutdown error", logger.Err(err))
+	} else {
+		lg.Info("Server shutdown completed")
 	}
-	logger.Emit(context.Background(), shutdownRecord)
 
 	return
 }

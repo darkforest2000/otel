@@ -32,7 +32,7 @@ func (h *Handler) NewServer(ctx context.Context) *http.Server {
 	handleFunc := func(pattern string, handlerFunc func(http.ResponseWriter, *http.Request)) {
 		// НЕ используем otelhttp.NewHandler, который переопределяет наши имена спанов
 		// Вместо этого настраиваем только трассировку маршрутов
-		handler := otelhttp.WithRouteTag(pattern, wrapHandler(handlerFunc, pattern))
+		handler := otelhttp.WithRouteTag(pattern, h.wrapHandler(handlerFunc, pattern))
 		mux.Handle(pattern, handler)
 	}
 
@@ -88,7 +88,6 @@ func (h *Handler) Hello(w http.ResponseWriter, r *http.Request) {
 	}
 	name := parts[2]
 
-	// Use the global DB connection instead of creating a new one
 	ctx := tractx.New(r.Context())
 
 	ctx, span, stop := ctx.TracerStart("hello")

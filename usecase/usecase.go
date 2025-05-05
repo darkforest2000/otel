@@ -1,7 +1,9 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
+	"wapp/logger"
 	"wapp/storage"
 	"wapp/tractx"
 
@@ -16,8 +18,11 @@ func New(storage *storage.Storage) *Usecase {
 	return &Usecase{storage: storage}
 }
 
+func lg(ctx context.Context) *logger.TraceLogger {
+	return logger.NewTraceLogger(ctx, "usecase")
+}
+
 func (u *Usecase) Hello(ctx tractx.Context, name string) (string, error) {
-	// ...
 	ctx, span, stop := ctx.TracerStart("helloUsecase")
 	defer stop()
 
@@ -25,13 +30,13 @@ func (u *Usecase) Hello(ctx tractx.Context, name string) (string, error) {
 
 	if name == "want500" {
 		err := fmt.Errorf("want500")
-		span.RecordError(err)
+		lg(ctx).Error("want500", logger.Err(err))
 		return "", err
 	}
 
 	name, err := u.storage.GetSurname(ctx, name)
 	if err != nil {
-		span.RecordError(err)
+		lg(ctx).Error("want500", logger.Err(err))
 		return "", err
 	}
 	return name, nil

@@ -3,7 +3,6 @@ package handler
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 	"wapp/logger"
 
@@ -11,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func wrapHandler(handler http.HandlerFunc, pattern string) http.HandlerFunc {
+func (h *Handler) wrapHandler(handler http.HandlerFunc, pattern string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -32,9 +31,14 @@ func wrapHandler(handler http.HandlerFunc, pattern string) http.HandlerFunc {
 			attribute.String("http.remote_addr", r.RemoteAddr),
 		)
 
+		lg := logger.NewTraceLogger(ctx, "handler")
+
 		// Используем трейс-логгер вместо обычного
-		traceLogger := logger.NewTraceLogger(ctx, os.Stdout)
-		traceLogger.Printf("Started %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+		lg.Printf("Started ",
+			logger.String("http.method", r.Method),
+			logger.String("http.url", r.URL.String()),
+			logger.String("http.remote_addr", r.RemoteAddr),
+		)
 
 		// Создаем обертку для отслеживания статус-кода
 		tracker := &statusCodeTracker{ResponseWriter: w, statusCode: http.StatusOK}
@@ -47,6 +51,10 @@ func wrapHandler(handler http.HandlerFunc, pattern string) http.HandlerFunc {
 			attribute.String("http.duration_ms", fmt.Sprintf("%f", float64(elapsed.Milliseconds()))),
 			attribute.Int("http.status_code", tracker.statusCode),
 		)
-		traceLogger.Printf("Completed %s in %v with status %d", r.URL.Path, elapsed, tracker.statusCode)
+		lg.Printf("Completed ",
+			logger.String("http.url", r.URL.Path),
+			logger.String("http.duration_ms", fmt.Sprintf("%f", float64(elapsed.Milliseconds()))),
+			logger.Int("http.status_code", tracker.statusCode),
+		)
 	})
 }
