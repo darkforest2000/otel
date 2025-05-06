@@ -175,6 +175,7 @@
               },
               "showPoints": "auto",
               "spanNulls": false,
+              "nullValueMode": "null as zero",
               "stacking": {
                 "group": "A",
                 "mode": "none"
@@ -273,7 +274,7 @@
             },
             "editorType": "sql",
             "format": 1,
-            "rawSql": "SELECT\n    toStartOfInterval(Timestamp, INTERVAL 1 minute) as time,\n    SeverityText,\n    count() as count\nFROM \"otel_logs\".\"logs\"\nWHERE $__timeFilter(Timestamp)\n  AND SeverityText IN ('ERROR', 'WARN', 'FATAL')\nGROUP BY time, SeverityText\nORDER BY time",
+            "rawSql": "SELECT\n    toStartOfInterval(Timestamp, INTERVAL 1 minute) as time,\n    SeverityText,\n    count() as count\nFROM \"otel_logs\".\"logs\"\nWHERE $__timeFilter(Timestamp)\n  AND SeverityText IN ('ERROR', 'WARN', 'FATAL')\nGROUP BY time, SeverityText\nORDER BY\n    time ASC WITH FILL FROM toStartOfInterval($__fromTime, INTERVAL 1 minute) TO toStartOfInterval($__toTime, INTERVAL 1 minute) STEP INTERVAL 1 minute,\n    SeverityText",
             "refId": "A"
           }
         ],

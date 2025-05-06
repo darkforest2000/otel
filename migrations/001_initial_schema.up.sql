@@ -5,3 +5,5 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 INSERT INTO users (name, surname) VALUES ('John', 'Doe');
+INSERT INTO users (name, surname) VALUES ('Jane', 'Smith');
+INSERT INTO users (name, surname) VALUES ('Jim', 'Beam');

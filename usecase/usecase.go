@@ -7,7 +7,9 @@ import (
 	"wapp/storage"
 	"wapp/tractx"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type Usecase struct {
@@ -39,5 +41,22 @@ func (u *Usecase) Hello(ctx tractx.Context, name string) (string, error) {
 		lg(ctx).Error("storage error", logger.Err(err))
 		return "", err
 	}
+
+	// Получаем Meter
+	meter := otel.GetMeterProvider().Meter("usecase-hello")
+
+	// Создаем Counter
+	counter, err := meter.Int64Counter(
+		"processed_names_total", // Новое имя метрики
+		metric.WithDescription("Total number of names processed by Hello usecase"),
+		metric.WithUnit("{names}"), // Указываем единицу измерения (опционально)
+	)
+	if err != nil {
+		lg(ctx).Error("error creating counter", logger.Err(err)) // Логируем ошибку
+		return "", err 
+	}
+
+	// Увеличиваем счетчик на 1 с атрибутом
+	counter.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(attribute.String("name_processed", name))))
 	return name, nil
 }

@@ -25,6 +25,8 @@ exporters:
       initial_interval: 5s
       max_interval: 30s
       max_elapsed_time: 300s
+  prometheus: # Added Prometheus exporter
+    endpoint: "0.0.0.0:8889"
 
 processors:
   batch:
@@ -43,7 +45,7 @@ service:
     metrics:
       receivers: [otlp]
       processors: [batch, resource]
-      exporters: [debug]
+      exporters: [debug, prometheus]
     traces:
       receivers: [otlp]
       processors: [batch, resource]

@@ -7,6 +7,7 @@ services:
     ports:
       - "4318:4318" # OTLP HTTP receiver
       - "4317:4317" # OTLP gRPC receiver
+      - "8889:8889" # Prometheus exporter port
     depends_on:
       jaeger:
         condition: service_started # Jaeger can start whenever
@@ -60,6 +61,20 @@ services:
       retries: 5
       start_period: 10s # Give ClickHouse time to start before checking
 
+  prometheus: # New Prometheus service
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      otel-collector: # Wait for otel-collector to start
+        condition: service_started
+    restart: on-failure
+    command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.path=/prometheus']
+
   postgres:
     image: postgres:16
     container_name: postgres
@@ -76,14 +91,19 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=xx
       - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource
     volumes:
       - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
       - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards/dashboards
+    depends_on: # Grafana should start after Prometheus is available
+      - prometheus
+      # - clickhouse # If Grafana also depends on Clickhouse, keep it
 
 volumes:
   grafana-data:
   postgres-data:
   clickhouse-data:
+  prometheus-data: # Add volume for Prometheus data
+  # cassandra-data: # Keep if Jaeger uses Cassandra
