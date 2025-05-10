@@ -42,8 +42,8 @@ services:
       - "9000:9000" # Native interface
     volumes:
       - clickhouse-data:/var/lib/clickhouse
-      - ./clickhouse-init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./clickhouse-users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./migrations/clickhouse/clickhouse-init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./migrations/clickhouse/clickhouse-users.xml:/etc/clickhouse-server/users.d/users.xml
     environment:
       - CLICKHOUSE_USER=default
       - CLICKHOUSE_PASSWORD=

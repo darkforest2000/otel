@@ -22,6 +22,19 @@
     "links": [],
     "panels": [
       {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 10,
+        "panels": [],
+        "title": "WARN / ERROR",
+        "type": "row"
+      },
+      {
         "datasource": {
           "type": "jaeger",
           "uid": "jaeger"
@@ -158,7 +171,7 @@
           "h": 14,
           "w": 12,
           "x": 0,
-          "y": 0
+          "y": 1
         },
         "id": 2,
         "options": {
@@ -189,7 +202,7 @@
             "tags": "http.res=client_error"
           }
         ],
-        "title": "4xx",
+        "title": "WARN - 4xx",
         "type": "table"
       },
       {
@@ -329,7 +342,7 @@
           "h": 14,
           "w": 12,
           "x": 12,
-          "y": 0
+          "y": 1
         },
         "id": 3,
         "options": {
@@ -360,8 +373,93 @@
             "tags": "http.res=error"
           }
         ],
-        "title": "5xx",
+        "title": "ERROR - 5xx",
         "type": "table"
+      },
+      {
+        "collapsed": true,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 15
+        },
+        "id": 9,
+        "panels": [
+          {
+            "datasource": {
+              "type": "jaeger",
+              "uid": "jaeger"
+            },
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 16,
+              "w": 24,
+              "x": 0,
+              "y": 44
+            },
+            "id": 4,
+            "options": {
+              "spanFilters": {
+                "criticalPathOnly": false,
+                "matchesOnly": false,
+                "serviceNameOperator": "=",
+                "spanNameOperator": "=",
+                "tags": [
+                  {
+                    "id": "2e986d50-263",
+                    "operator": "="
+                  }
+                ]
+              }
+            },
+            "pluginVersion": "11.6.1",
+            "targets": [
+              {
+                "query": "$TRACE_ID",
+                "refId": "A"
+              }
+            ],
+            "title": "View Trace",
+            "type": "traces"
+          },
+          {
+            "datasource": {
+              "type": "jaeger",
+              "uid": "jaeger"
+            },
+            "fieldConfig": {
+              "defaults": {},
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 15,
+              "w": 24,
+              "x": 0,
+              "y": 75
+            },
+            "id": 6,
+            "options": {
+              "edges": {},
+              "nodes": {},
+              "zoomMode": "cooperative"
+            },
+            "pluginVersion": "11.6.1",
+            "targets": [
+              {
+                "query": "$TRACE_ID",
+                "refId": "A"
+              }
+            ],
+            "title": "Panel Title",
+            "type": "nodeGraph"
+          }
+        ],
+        "title": "VIEW BY TRACE ID",
+        "type": "row"
       },
       {
         "collapsed": false,
@@ -369,83 +467,12 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 14
+          "y": 16
         },
         "id": 5,
         "panels": [],
-        "title": "VIEW BY TRACE ID",
+        "title": "ALL (25%)",
         "type": "row"
-      },
-      {
-        "datasource": {
-          "type": "jaeger",
-          "uid": "jaeger"
-        },
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 16,
-          "w": 24,
-          "x": 0,
-          "y": 15
-        },
-        "id": 4,
-        "options": {
-          "spanFilters": {
-            "criticalPathOnly": false,
-            "matchesOnly": false,
-            "serviceNameOperator": "=",
-            "spanNameOperator": "=",
-            "tags": [
-              {
-                "id": "2e986d50-263",
-                "operator": "="
-              }
-            ]
-          }
-        },
-        "pluginVersion": "11.6.1",
-        "targets": [
-          {
-            "query": "$TRACE_ID",
-            "refId": "A"
-          }
-        ],
-        "title": "View Trace",
-        "type": "traces"
-      },
-      {
-        "datasource": {
-          "type": "jaeger",
-          "uid": "jaeger"
-        },
-        "fieldConfig": {
-          "defaults": {},
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 15,
-          "w": 24,
-          "x": 0,
-          "y": 31
-        },
-        "id": 6,
-        "options": {
-          "edges": {},
-          "nodes": {},
-          "zoomMode": "cooperative"
-        },
-        "pluginVersion": "11.6.1",
-        "targets": [
-          {
-            "query": "$TRACE_ID",
-            "refId": "A"
-          }
-        ],
-        "title": "Panel Title",
-        "type": "nodeGraph"
       },
       {
         "datasource": {
@@ -581,12 +608,12 @@
           ]
         },
         "gridPos": {
-          "h": 16,
+          "h": 15,
           "w": 24,
           "x": 0,
-          "y": 46
+          "y": 17
         },
-        "id": 7,
+        "id": 8,
         "options": {
           "cellHeight": "sm",
           "footer": {
@@ -615,7 +642,7 @@
             "tags": "http.res=ok"
           }
         ],
-        "title": "2xx",
+        "title": "OK - 1xx / 2xx / 3xx",
         "type": "table"
       }
     ],
@@ -635,7 +662,7 @@
           },
           "name": "TRACE_ID",
           "options": [],
-          "query": "98ea905813a951d29b10709f9c4bfcb3",
+          "query": "38bec0c45a93254392e700c1277d0da9",
           "type": "textbox"
         }
       ]
@@ -648,5 +675,5 @@
     "timezone": "",
     "title": "Traces Dashboard",
     "uid": "traces",
-    "version": 1
+    "version": 3
 }

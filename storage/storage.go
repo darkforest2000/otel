@@ -21,8 +21,8 @@ func New(ctx context.Context) (*Storage, error) {
 		return nil, fmt.Errorf("failed to setup database: %w", err)
 	}
 
-	if err := doMigration(db, "migrations"); err != nil {
-		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	if err := doMigration(db, "migrations/postgres"); err != nil {
+		return nil, fmt.Errorf("failed to apply migration: %w", err)
 	}
 
 	return &Storage{db: db}, nil

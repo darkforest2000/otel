@@ -43,10 +43,6 @@ func setupDBWithTracing(ctx context.Context) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to register DB metrics: %w", err)
 	}
 
-	if err := doMigration(db, "migrations"); err != nil {
-		return nil, fmt.Errorf("failed to apply migration: %w", err)
-	}
-
 	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
