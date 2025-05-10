@@ -14,6 +14,8 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
@@ -72,42 +74,70 @@ func (h *Handler) Root(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "Hello, World from the Go server!")
 }
 
+// httpErrorHelper is a refactored helper to set span status and record errors correctly.
+func httpErrorHelper(span trace.Span, w http.ResponseWriter, r *http.Request, httpStatus int, publicMessage string, internalError error) {
+	// Always set standard HTTP attributes. These are captured by h.wrapHandler at the end,
+	// but setting them here can be useful if the handler exits early.
+	// The wrapHandler will set the final authoritative one.
+	span.SetAttributes(attribute.Int("http.status_code", httpStatus))
+
+	// For SpanKind.SERVER:
+	// - 5xx status codes indicate a server error, so set SpanStatus to Error.
+	// - 4xx status codes indicate a client error. The server handled it correctly,
+	//   so SpanStatus should NOT be Error. We can still record the error for diagnostics.
+	if httpStatus >= 500 {
+		span.SetStatus(codes.Error, publicMessage)
+		span.SetAttributes(attribute.String("http.res", "error"))
+	} else if httpStatus >= 400 && httpStatus < 500 {
+		span.SetAttributes(attribute.String("http.res", "client_error"))
+	}
+
+	if internalError != nil {
+		span.RecordError(internalError)
+	} else {
+		// Create a generic error if no specific one is provided
+		span.RecordError(errors.New(publicMessage))
+	}
+
+	http.Error(w, publicMessage, httpStatus)
+}
+
 // handleHello handles requests like "/hello/{name}"
 func (h *Handler) Hello(w http.ResponseWriter, r *http.Request) {
+	ctx := tractx.New(r.Context())
+	span := trace.SpanFromContext(ctx) // Get the span from the context (created by wrapHandler)
+
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		httpErrorHelper(span, w, r, http.StatusMethodNotAllowed, "Method Not Allowed", errors.New("method not allowed"))
 		return
 	}
 
-	// Corner case: Path parameters - extracting dynamic parts of the URL
 	parts := strings.Split(r.URL.Path, "/")
-	// Expected path: /hello/{name} -> parts = ["", "hello", "{name}"]
 	if len(parts) < 3 || parts[2] == "" {
-		http.Error(w, "Bad Request: Missing name in path (e.g., /hello/yourname)", http.StatusBadRequest)
+		errDetail := fmt.Errorf("bad request: missing name in path (e.g., /hello/yourname)")
+		httpErrorHelper(span, w, r, http.StatusBadRequest, "Bad Request: Missing name in path (e.g., /hello/yourname)", errDetail)
 		return
 	}
 	name := parts[2]
 
-	ctx := tractx.New(r.Context())
+	span.SetAttributes(attribute.String("handler.input.name", name))
 
-	ctx, span, stop := ctx.TracerStart("hello")
-	defer stop()
-
-	span.SetAttributes(attribute.String("nameInHandler", name))
-
-	name, err := h.usecase.Hello(ctx, name)
+	// Call usecase directly. The usecase method itself will create its own span as a child of the current one.
+	usecaseResultName, err := h.usecase.Hello(ctx, name)
 	if err != nil {
 		if errors.Is(err, constant.NotFound) {
-			span.RecordError(err)
-			http.Error(w, "Sorry, user not found", http.StatusBadRequest)
-			return
+			// Usecase determined it's a client-side issue (NotFound)
+			httpErrorHelper(span, w, r, http.StatusBadRequest, "Sorry, user not found", err)
+		} else {
+			// Any other error from usecase is treated as an internal server error by the handler
+			httpErrorHelper(span, w, r, http.StatusInternalServerError, "Internal Server Error", err)
 		}
-		span.RecordError(err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
+	} else {
+		span.SetAttributes(attribute.String("http.res", "ok")) // Set for successful case
 	}
 
-	fmt.Fprintf(w, "Hello, %s!\n", name)
+	fmt.Fprintf(w, "Hello, %s!\n", usecaseResultName)
 }
 
 // handleQuery handles requests with query parameters like "/query?key=value"
@@ -116,10 +146,9 @@ func handleQuery(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	// Corner case: Query parameters - accessing key-value pairs
 	queryValues := r.URL.Query()
-	key := queryValues.Get("key")      // Gets the first value associated with "key"
-	multiValue := queryValues["multi"] // Gets all values associated with "multi"
+	key := queryValues.Get("key")
+	multiValue := queryValues["multi"]
 
 	if key == "" {
 		fmt.Fprintln(w, "Query parameter 'key' is missing or empty.")

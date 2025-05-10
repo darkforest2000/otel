@@ -18,7 +18,7 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 3,
+    "id": 4,
     "links": [],
     "panels": [
       {
@@ -186,7 +186,7 @@
             "queryType": "search",
             "refId": "A",
             "service": "go-app",
-            "tags": "http.status_code=400"
+            "tags": "http.res=client_error"
           }
         ],
         "title": "4xx",
@@ -357,7 +357,7 @@
             "queryType": "search",
             "refId": "A",
             "service": "go-app",
-            "tags": "http.status_code=500"
+            "tags": "http.res=error"
           }
         ],
         "title": "5xx",
@@ -386,8 +386,8 @@
           "overrides": []
         },
         "gridPos": {
-          "h": 13,
-          "w": 12,
+          "h": 16,
+          "w": 24,
           "x": 0,
           "y": 15
         },
@@ -426,10 +426,10 @@
           "overrides": []
         },
         "gridPos": {
-          "h": 13,
-          "w": 12,
-          "x": 12,
-          "y": 15
+          "h": 15,
+          "w": 24,
+          "x": 0,
+          "y": 31
         },
         "id": 6,
         "options": {
@@ -446,6 +446,177 @@
         ],
         "title": "Panel Title",
         "type": "nodeGraph"
+      },
+      {
+        "datasource": {
+          "type": "jaeger",
+          "uid": "jaeger"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "applyToRow": true,
+                "mode": "basic",
+                "type": "color-background",
+                "wrapText": true
+              },
+              "filterable": true,
+              "inspect": true
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "transparent"
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Trace ID"
+              },
+              "properties": [
+                {
+                  "id": "custom.width",
+                  "value": 300
+                },
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "targetBlank": false,
+                      "title": "Выбрать",
+                      "url": "/d/${__dashboard.uid}?var-TRACE_ID=${__value.text:raw}"
+                    },
+                    {
+                      "title": "Посмотреть в Grafana",
+                      "url": "/explore?left={\"datasource\":\"jaeger\",\"queries\":[{\"query\":\"${__value.text:raw}\"}]}"
+                    },
+                    {
+                      "targetBlank": true,
+                      "title": "Посмотреть в Jaeger UI",
+                      "url": "http://localhost:16686/trace/${__value.text:raw}"
+                    }
+                  ]
+                },
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "mode": "basic",
+                    "type": "color-text"
+                  }
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "dark-red"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Trace name"
+              },
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "pattern": "^go-app: (.*)$",
+                        "result": {
+                          "index": 0,
+                          "text": "$1"
+                        }
+                      },
+                      "type": "regex"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Duration"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "type": "gauge"
+                  }
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "continuous-reds"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 16,
+          "w": 24,
+          "x": 0,
+          "y": 46
+        },
+        "id": 7,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "enablePagination": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true,
+          "sortBy": []
+        },
+        "pluginVersion": "11.6.1",
+        "targets": [
+          {
+            "datasource": {
+              "type": "jaeger",
+              "uid": "jaeger"
+            },
+            "query": "{}",
+            "queryType": "search",
+            "refId": "A",
+            "service": "go-app",
+            "tags": "http.res=ok"
+          }
+        ],
+        "title": "2xx",
+        "type": "table"
       }
     ],
     "preload": false,
@@ -464,7 +635,7 @@
           },
           "name": "TRACE_ID",
           "options": [],
-          "query": "821f9a9173bc35001e3e1046db1e95f5",
+          "query": "98ea905813a951d29b10709f9c4bfcb3",
           "type": "textbox"
         }
       ]

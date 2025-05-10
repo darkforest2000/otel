@@ -16,6 +16,7 @@ exporters:
   clickhouse:
     endpoint: http://clickhouse:8123
     database: otel_logs 
+    traces_table_name: traces
     logs_table_name: logs
     username: default
     password: ""
@@ -35,7 +36,29 @@ processors:
       - key: service.name
         value: "go-app"
         action: upsert
+  tail_sampling:
+    decision_wait: 10s # 10 second delay for sampling decision
+    num_traces: 50000 # Number of traces to sample (default val)
+    expected_new_traces_per_sec: 10 # Expected number of new traces per second, for better allocation
+    policies:
+      [
+        { #  this example will filter traces with the status code ERROR
+          name: errors-policy,
+          type: status_code,
+          status_code: { status_codes: [ERROR] },
+        },
+        { # in addition to filtering all traces with errors, there will also be a randomized sampling of 25% of traces without errors.
+          name: randomized-policy,
+          type: probabilistic,
+          probabilistic: { sampling_percentage: 25 },
+        },
+      ]
+    # You also have the flexibility to add other policies. Here are a few examples:
+    # - always_sample: Sample all traces.
+    # - latency: Sample based on the duration of the trace. For example, you could sample all traces that take longer than 5 seconds.
+    # - string_attribute: Sample based on string attribute values, both exact and regular expression value matches are supported. For example, you could sample based on specific custom attribute values.
 
+          
 service:
   pipelines:
     logs:
@@ -48,5 +71,5 @@ service:
       exporters: [debug, prometheus]
     traces:
       receivers: [otlp]
-      processors: [batch, resource]
-      exporters: [debug, otlp]
+      processors: [resource, tail_sampling, batch]
+      exporters: [debug, otlp,clickhouse]
