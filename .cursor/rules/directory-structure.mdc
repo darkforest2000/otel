@@ -1,16 +1,17 @@
 ---
 description:
 globs:
-alwaysApply: false
+alwaysApply: true
 ---
 # Directory Structure
 
 ## Main Directories
 - **constant/**: Contains application constants and enums
-- **grafana/**: Grafana configuration files
+- **grafana/**: Grafana configuration files and dashboards
 - **handler/**: HTTP handlers and API endpoints
-- **logger/**: Custom logging utilities
+- **logger/**: Custom logging utilities with OpenTelemetry integration
 - **migrations/**: Database migration scripts
+- **prometheus/**: Prometheus configuration files
 - **storage/**: Database access and data persistence
 - **tractx/**: Tracing utilities and context management
 - **usecase/**: Business logic and core application functionality
@@ -18,13 +19,24 @@ alwaysApply: false
 ## Root Files
 - **main.go**: Application entry point
 - **otel.go**: OpenTelemetry SDK setup
-- **logger.go**: Logging configuration
 - **compose.yaml**: Docker Compose configuration
-- **otel-collector-config.yaml**: OpenTelemetry Collector configuration
+- **otel-collector-config.yaml**: OpenTelemetry Collector configuration with tail sampling
+- **clickhouse-init.sql**: ClickHouse database initialization
+- **clickhouse-users.xml**: ClickHouse user configuration
 - **go.mod/go.sum**: Go module dependencies
 
 ## Architecture Layers
 The project follows a clean architecture pattern:
-- [handler/](mdc:handler/): Presentation layer
-- [usecase/](mdc:usecase/): Application/business layer
-- [storage/](mdc:storage/): Data access layer
+- [handler/](mdc:handler/): Presentation layer with proper error handling and span status management
+- [usecase/](mdc:usecase/): Application/business layer with centralized error handling
+- [storage/](mdc:storage/): Data access layer with instrumented database operations
+
+## Data Storage
+- **PostgreSQL**: Primary application database
+- **ClickHouse**: Telemetry storage for logs and traces
+- **Prometheus**: Metrics storage
+
+## Telemetry Exporters
+- **Jaeger**: Distributed tracing visualization
+- **ClickHouse**: Logs and traces storage
+- **Prometheus**: Metrics storage and querying

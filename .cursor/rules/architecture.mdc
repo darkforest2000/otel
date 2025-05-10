@@ -1,7 +1,7 @@
 ---
 description:
 globs:
-alwaysApply: false
+alwaysApply: true
 ---
 # Architecture
 
@@ -15,11 +15,19 @@ This project follows a clean architecture pattern with clear separation of conce
 ## Telemetry Flow
 1. OpenTelemetry SDK is set up in [otel.go](mdc:otel.go)
 2. Telemetry data (traces, metrics, logs) is sent to the OpenTelemetry Collector
-3. The collector processes and forwards data to backends (Jaeger, etc.)
-4. Visualization is available through Jaeger UI and Grafana
+3. The collector processes and forwards data to backends (Jaeger, ClickHouse, Prometheus)
+4. Visualization is available through Jaeger UI and Grafana dashboards
+
+## Error Handling & Tracing
+1. HTTP handlers use `httpErrorHelper` to properly set span status and record errors
+2. UseCase layer uses centralized error handling with `handleError` function
+3. All errors are properly propagated and recorded in spans
+4. Client errors (4xx) do not mark server spans as error, following OTel conventions
+5. Server errors (5xx) properly mark spans as error
 
 ## Components
 - **Handler Layer**: Responsible for HTTP routing, request parsing, and response formatting
 - **Use Case Layer**: Contains business logic and orchestrates operations
 - **Storage Layer**: Handles database interactions and data persistence
-- **Logger**: Provides structured logging capabilities
+- **Logger**: Provides structured OpenTelemetry-based logging
+- **Tractx**: Provides utilities for trace context management

@@ -1,7 +1,7 @@
 ---
 description:
 globs:
-alwaysApply: false
+alwaysApply: true
 ---
 # Getting Started
 
@@ -20,21 +20,36 @@ alwaysApply: false
 - **Application**: http://localhost:8080
 - **Jaeger UI**: http://localhost:16686
 - **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+
+## Test Endpoints
+- **Success response**: http://localhost:8080/hello/John
+- **Client error (4xx)**: http://localhost:8080/hello/nonexistent
+- **Server error (5xx)**: http://localhost:8080/hello/want500
 
 ## Key Files
 - [main.go](mdc:main.go): Application entry point
 - [compose.yaml](mdc:compose.yaml): Infrastructure configuration
-- [otel-collector-config.yaml](mdc:otel-collector-config.yaml): Telemetry collection setup
+- [otel-collector-config.yaml](mdc:otel-collector-config.yaml): Telemetry collection and tail sampling setup
 
 ## Development Workflow
 1. Modify code in the relevant layer:
-   - API endpoints in [handler/](mdc:handler/)
-   - Business logic in [usecase/](mdc:usecase/)
-   - Data access in [storage/](mdc:storage/)
+   - API endpoints in [handler/handler.go](mdc:handler/handler.go)
+   - Business logic in [usecase/usecase.go](mdc:usecase/usecase.go)
+   - Data access in [storage/storage.go](mdc:storage/storage.go)
 
 2. Ensure telemetry is properly instrumented:
-   - Traces for request flows
-   - Metrics for important indicators
-   - Logs for debugging information
+   - Traces: Use `tractx.Context` for span creation and propagation
+   - Errors: Use proper error handling in each layer
+   - Metrics: Define and collect meaningful metrics
+   - Logs: Use structured logging with trace context
 
-3. Check telemetry in Jaeger and Grafana dashboards
+3. Check telemetry:
+   - **Traces**: Jaeger UI or Grafana Traces dashboard
+   - **Logs**: Grafana Logs dashboard (from ClickHouse)
+   - **Metrics**: Grafana and Prometheus
+
+4. Understanding Error Handling:
+   - Client errors (4xx): Tagged with "http.res=client_error" but not ERROR status
+   - Server errors (5xx): Tagged with "http.res=error" and ERROR status
+   - UseCase errors: Properly propagated and recorded in spans

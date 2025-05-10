@@ -1,7 +1,7 @@
 ---
 description:
 globs:
-alwaysApply: false
+alwaysApply: true
 ---
 # OpenTelemetry Integration
 
@@ -17,19 +17,38 @@ The OpenTelemetry SDK is initialized in [otel.go](mdc:otel.go), which sets up:
 ## Collector Configuration
 [otel-collector-config.yaml](mdc:otel-collector-config.yaml) defines:
 - OTLP receivers (HTTP/gRPC)
-- Exporters (debug, Jaeger)
+- Processors (resource, tail_sampling, batch)
+- Exporters (debug, Jaeger, ClickHouse, Prometheus)
 - Processing pipelines for logs, metrics, and traces
+
+## Tail Sampling
+The collector implements tail sampling for efficient tracing:
+- Error-based sampling captures all traces with ERROR status
+- Probabilistic sampling captures 25% of remaining traces
+- Configurable settings with `decision_wait`, `num_traces` parameters
+- Reduces storage and processing costs while retaining important data
+
+## Error Handling
+The project implements OTel semantic conventions for error handling:
+- Server errors (5xx) set span status to ERROR
+- Client errors (4xx) leave span status unset for SERVER spans
+- All errors are recorded with span.RecordError() for observability
+- Custom attributes (http.res) for easier filtering in Jaeger/Grafana
 
 ## Infrastructure
 The observability stack in [compose.yaml](mdc:compose.yaml) includes:
-- OpenTelemetry Collector
-- Jaeger (distributed tracing)
-- Grafana (dashboards and visualization)
-- PostgreSQL (application database)
+- OpenTelemetry Collector: Central processing of all telemetry data
+- Jaeger: Distributed tracing visualization
+- ClickHouse: Storage for logs and traces with SQL querying
+- Prometheus: Metrics storage and querying
+- Grafana: Unified dashboards for all telemetry data
+- PostgreSQL: Application database
 
 ## Best Practices
 This implementation demonstrates key observability practices:
 - Context propagation across service boundaries
 - Resource attributes for service identification
-- Batch processing of telemetry data
+- Centralized error handling in each architectural layer
+- Span hierarchy matching architecture layers
+- Structured, trace-aware logging
 - Proper shutdown handling of telemetry providers

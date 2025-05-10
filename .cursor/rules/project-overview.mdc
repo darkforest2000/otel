@@ -1,7 +1,7 @@
 ---
 description:
 globs:
-alwaysApply: false
+alwaysApply: true
 ---
 # Project Overview
 
@@ -9,13 +9,28 @@ This project is a Go application demonstrating the use of OpenTelemetry for obse
 
 - **Entry Point**: [main.go](mdc:main.go) - Initializes and connects all components
 - **Observability**: [otel.go](mdc:otel.go) - Sets up OpenTelemetry tracing, metrics, and logging
-- **HTTP Layer**: [handler/handler.go](mdc:handler/handler.go) - API endpoints and HTTP server
-- **Business Logic**: [usecase/usecase.go](mdc:usecase/usecase.go) - Core application logic
-- **Data Access**: [storage/storage.go](mdc:storage/storage.go) - Database interactions
-- **Logging**: [logger.go](mdc:logger.go) - Custom logging functionality
+- **HTTP Layer**: [handler/handler.go](mdc:handler/handler.go) - API endpoints and HTTP server with proper error handling
+- **Business Logic**: [usecase/usecase.go](mdc:usecase/usecase.go) - Core application logic with centralized error handling
+- **Data Access**: [storage/storage.go](mdc:storage/storage.go) - Database interactions with instrumentation
+- **Context Management**: [tractx/tractx.go](mdc:tractx/tractx.go) - Tracing context propagation utilities
+
+## Key Features
+- **Complete Observability**: Integrated tracing, metrics, and logging
+- **Tail Sampling**: Cost-efficient trace collection targeting errors and statistical sampling
+- **Semantic Error Handling**: Properly differentiating between client and server errors
+- **Multi-Backend Storage**: Telemetry data stored in Jaeger, ClickHouse, and Prometheus
+- **Unified Visualization**: Grafana dashboards for all telemetry data
 
 ## Infrastructure
 - **Docker Compose**: [compose.yaml](mdc:compose.yaml) - Defines service containers
 - **OpenTelemetry Collector**: [otel-collector-config.yaml](mdc:otel-collector-config.yaml) - Configures telemetry collection
+- **ClickHouse**: [clickhouse-init.sql](mdc:clickhouse-init.sql) - Log and trace storage schema
 
-This application demonstrates sending telemetry data to OpenTelemetry Collector which forwards it to tools like Jaeger for tracing, and includes Grafana for visualization.
+## Best Practices Demonstrated
+- Proper span hierarchy following application architecture
+- Consistent error handling across layers
+- Structured logging with trace correlation
+- Semantic conventions for HTTP interactions
+- Efficient sampling strategies for production environment
+
+This application provides a complete reference implementation of OpenTelemetry in a Go application with proper architectural patterns and error handling.
